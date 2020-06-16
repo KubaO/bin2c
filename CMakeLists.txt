@@ -4,4 +4,10 @@ project(bin2c LANGUAGES C)
 
 add_executable(bin2c src/bin2c.c)
 
-set_property(TARGET bin2c PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if (MSVC)
+    target_compile_options(bin2c PRIVATE /W4)
+    target_compile_definitions(bin2c PRIVATE _CRT_SECURE_NO_WARNINGS)
+    set_property(TARGET bin2c PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    target_compile_options(bin2c PRIVATE -Wall)
+endif()
