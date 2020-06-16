@@ -1,0 +1,4 @@
+# Qt Creator per-user local project configuration
+*.user
+# Autosave and backup files
+*.autosave
