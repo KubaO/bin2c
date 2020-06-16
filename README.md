@@ -3,18 +3,18 @@
 bin2c is a simple commandline utility that generates C source files from binary files. It can be used to embed external files into C or C++ programs.
 
 Forked from sourceforge.net/projects/bin2c by Jeroen6 (https://github.com/Jeroen6)
-  - Modified to create valid header files
-  - Set to CRLF line endings
+
+* Changes
+
+bin2c 1.1 adds file information tables and fixes a few bugs and compiler warnings.
 
 * License
 
-To the extent possible under law, Fatih Aygün has waived all copyright and related or neighboring rights to bin2c. In other words, bin2c is public domain program, you can do whatever you want to do with it.
+To the extent possible under law, authors have waived all copyright and related or neighboring rights to bin2c. In other words, bin2c is public domain program, you can do whatever you want to do with it.
 
 * Compilation
 
 bin2c is a standard C program that you can compile with your favorite C compiler. A ready to run Windows executable compiled with mingw cross-compiler is included in the package.
-
-This repository contains Qt 5 project files.
 
 * Usage
 
@@ -22,18 +22,15 @@ This repository contains Qt 5 project files.
 
     Options:
       -d, --header <file name>  Name a header file (A header file will not be created  unless explicitly named)
-      -h, --help                Print a command line help and exit immediately
+      -h, --help                Print this command line help and exit immediately
       -o, --output <file name>  Name an output file
       -m, --macro               Create the size definition as a macro instead of a const
       -n, --name <symbol name>  Name the symbol to be defined
+      -t, --table <symbol name> Create file information table with original file names
       -v, --version             Print version information and exit immediately
 
     Examples:
-      bin2c -o foo.h bar.bin
-            Create 'foo.h' from the contents of 'bar.bin'
-
-      bin2c -o foo.h file1 file2
-            Create 'foo.h' from the contents of 'file1' and 'file2'
-
-      bin2c -d foo.h -o foo.c bar.bin
-            Create 'foo.c' and 'foo.h' from the contents of 'bar.bin'
+      bin2c -o foo.h bar.bin              Create 'foo.h' from the contents of 'bar.bin'
+      bin2c -o foo.h file1 file2          Create 'foo.h' from the contents of 'file1' and 'file2'
+      bin2c -d foo.h -o foo.c bar.bin     Create 'foo.c' and 'foo.h' from the contents of 'bar.bin'
+      bin2c -t -d foo.h -o foo.c bar.bin  Same as above with the addition of a file information table
