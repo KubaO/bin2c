@@ -1,20 +1,19 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Version information */
-const char *versionInfo = 
+const char *versionInfo =
     "bin2c version 1.1\n"
     "\n"
     "Visit sourceforge.net/projects/bin2c to for new versions.\n"
-    "This program is public domain, do whatever you want with it.\n"
-;
+    "This program is public domain, do whatever you want with it.\n";
 
 /* Command line help */
-const char *commandLineHelp = 
+const char *commandLineHelp =
     "Usage: bin2c [OPTION...] FILE [FILE...]\n"
     "bin2c creates a C soures and headers from binary files.\n"
     "\n"
@@ -37,55 +36,51 @@ const char *commandLineHelp =
     "  -m, --macro               Create the size definition as a macro instead\n"
     "                            of a const\n"
     "  -n, --name <symbol name>  Name the symbol to be defined\n"
-	"  -t, --table <symbol name> Create file information table with original\n"
+    "  -t, --table <symbol name> Create file information table with original\n"
     "                            file names\n"
     "  -v, --version             Print version information and exit immediately\n"
     "\n"
     "Visit sourceforge.net/projects/bin2c to for new versions.\n"
-    "This program is public domain, do whatever you want with it.\n"
-    ;
-	
-const char *tableHead = 
-	"\n"
-	"/* File table comprising original file name, address and size */\n"
-	"typedef struct {\n"
-	"	char *entryName;\n"
-	"	const char *data;\n"
-	"	long int size;\n"	
-	"} TFileTableEntry;\n\n"
-	"extern const unsigned int fileTableSize;\n"
-	"extern const TFileTableEntry fileTable[];\n"
-	;
-	
-const char *tableStart = 
-	"\n"
-	"const TFileTableEntry fileTable[] = {\n"
-	;	
-const char *tableEnd = 
-	"\n};\n"
-	"const unsigned int fileTableSize = %d;\n"
-	;
+    "This program is public domain, do whatever you want with it.\n";
+
+const char *tableHead =
+    "\n"
+    "/* File table comprising original file name, address and size */\n"
+    "typedef struct {\n"
+    "	char *entryName;\n"
+    "	const char *data;\n"
+    "	long int size;\n"
+    "} TFileTableEntry;\n\n"
+    "extern const unsigned int fileTableSize;\n"
+    "extern const TFileTableEntry fileTable[];\n";
+
+const char *tableStart =
+    "\n"
+    "const TFileTableEntry fileTable[] = {\n";
+const char *tableEnd =
+    "\n};\n"
+    "const unsigned int fileTableSize = %d;\n";
 
 /* Output formatting macros */
-#define bytesPerLine            16
-#define indentString            "    "
-#define outputFormatBase        "0x%.2X"
-#define outputFormat            outputFormatBase", "
-#define outputFormatEOL         outputFormatBase",\n"
-#define outputFormatEOF         outputFormatBase"\n"
-#define externOutputDefinition 	"extern %s %s[%d];\n"
-#define sizeDefinition          "const long int %s_size = %d;\n"
-#define externSizeDefinition    "extern const long int %s_size;\n"
-#define sizeMacroDefinition     "#define %s_size %d\n"
-#define indexItemFirst			"\t{\"%s\", %s, %ld}" // fileName string, pointer to data, length of data
-#define indexItemNext			",\n"indexItemFirst
+#define bytesPerLine           16
+#define indentString           "    "
+#define outputFormatBase       "0x%.2X"
+#define outputFormat           outputFormatBase ", "
+#define outputFormatEOL        outputFormatBase ",\n"
+#define outputFormatEOF        outputFormatBase "\n"
+#define externOutputDefinition "extern %s %s[%d];\n"
+#define sizeDefinition         "const long int %s_size = %d;\n"
+#define externSizeDefinition   "extern const long int %s_size;\n"
+#define sizeMacroDefinition    "#define %s_size %d\n"
+#define indexItemFirst         "\t{\"%s\", %s, %ld}" // fileName string, pointer to data, length of data
+#define indexItemNext          ",\n" indexItemFirst
 
-#define typeName                "const unsigned char"
+#define typeName "const unsigned char"
 
 /* Define bool */
-#define bool    int
-#define false   0
-#define true    1
+#define bool int
+#define false 0
+#define true 1
 
 /* Global variables */
 FILE *outputFile;           /* Current output file stream */
@@ -95,27 +90,27 @@ const char *headerFileName; /* Current header file name */
 char *symbolName;           /* Current symbol name */
 char *headerSymbol;         /* Symbol for multiple inclusion protection */
 bool createMacro = false;   /* Should we create a define instead of a const? */
-bool createTable = false; 	/* Should we insert a file table into the header? */
-char *tableStr = NULL;		/* Table with items */
+bool createTable = false;   /* Should we insert a file table into the header? */
+char *tableStr = NULL;      /* Table with items */
 int tableStrSize = 0;
 int tableCount = 0;
 
 /* Error messages */
-const char* cantOpen = "Can't open file '%s'";
-const char* cantClose = "Can't close file '%s'";
-const char* cantRemove = "Can't remove file '%s'";
-const char* cantWrite = "Can't write to file '%s'";
-const char* noOutputFilesAreNamed = "No output files are named";
-const char* noHeaderFilesAreNamed = "No header files are named";
-const char* cantMalloc = "Can't allocate memory for '%s'";
-const char* cantSeek = "Can't seek in the file '%s'";
-const char* cantDetermine = "Can't determine the file size of '%s'";
-const char* cantRead = "Can't read from file %s";
-const char* unknownOption = "Unknown option '%s'";
-const char* tryHelp = "Try 'bin2c --help' for more information.\n";
-const char* noSymbolName = "No symbol name is given";
-const char* notValidId = "'%s' is not a valid identifier";
-const char* symbolNameGiven = "Symbol name is given twice";
+const char *cantOpen = "Can't open file '%s'";
+const char *cantClose = "Can't close file '%s'";
+const char *cantRemove = "Can't remove file '%s'";
+const char *cantWrite = "Can't write to file '%s'";
+const char *noOutputFilesAreNamed = "No output files are named";
+const char *noHeaderFilesAreNamed = "No header files are named";
+const char *cantMalloc = "Can't allocate memory for '%s'";
+const char *cantSeek = "Can't seek in the file '%s'";
+const char *cantDetermine = "Can't determine the file size of '%s'";
+const char *cantRead = "Can't read from file %s";
+const char *unknownOption = "Unknown option '%s'";
+const char *tryHelp = "Try 'bin2c --help' for more information.\n";
+const char *noSymbolName = "No symbol name is given";
+const char *notValidId = "'%s' is not a valid identifier";
+const char *symbolNameGiven = "Symbol name is given twice";
 
 /* Print a formatted error message */
 static void vprintfError(const char *format, va_list args)
@@ -134,7 +129,7 @@ static void vprintfError(const char *format, va_list args)
 static void printfError(const char *format, ...)
 {
     va_list args;
-    
+
     va_start(args, format);
     vprintfError(format, args);
     va_end(args);
@@ -143,30 +138,30 @@ static void printfError(const char *format, ...)
 /* Panic */
 static void panic()
 {
-        /* Close and remove the output file if it's open */
-        if (outputFile) {
-            if (fclose(outputFile)) {
-                printfError(cantClose, outputFileName);
-            }
-            
-            if (remove(outputFileName)) {
-                printfError(cantRemove, outputFileName);
-            }
-        }        
-        
-        /* Close and remove the header file if it's open */
-        if (headerFile) {
-            if (fclose(headerFile)) {
-                printfError(cantClose, headerFileName);
-            }
-            
-            if (remove(headerFileName)) {
-                printfError(cantRemove, headerFileName);
-            }
-        }        
+    /* Close and remove the output file if it's open */
+    if (outputFile) {
+        if (fclose(outputFile)) {
+            printfError(cantClose, outputFileName);
+        }
 
-        /* Exit with an error code */
-        exit(EXIT_FAILURE);
+        if (remove(outputFileName)) {
+            printfError(cantRemove, outputFileName);
+        }
+    }
+
+    /* Close and remove the header file if it's open */
+    if (headerFile) {
+        if (fclose(headerFile)) {
+            printfError(cantClose, headerFileName);
+        }
+
+        if (remove(headerFileName)) {
+            printfError(cantRemove, headerFileName);
+        }
+    }
+
+    /* Exit with an error code */
+    exit(EXIT_FAILURE);
 }
 
 /* Check a contidion and panic if it's false */
@@ -178,7 +173,7 @@ static void check(bool condition, const char *format, ...)
         va_start(args, format);
         vprintfError(format, args);
         va_end(args);
-        panic();        
+        panic();
     }
 }
 
@@ -215,8 +210,8 @@ static char *fileNameToSymbol(const char *fileName)
 {
     char *name;
     int i;
-    
-    name = (char*)malloc(strlen(fileName) + 1);
+
+    name = (char *)malloc(strlen(fileName) + 1);
     check(name != 0, cantMalloc, "the symbol name");
 
     /* Copy the file name to symbolName */
@@ -224,9 +219,9 @@ static char *fileNameToSymbol(const char *fileName)
 
     /* Replace every non alphanumerical character with '_' */
     for (i = 0; name[i]; ++i) {
-        if (!((name[i] >= 'a' && name[i] <= 'z') || 
-                (name[i] >= 'A' && name[i] <= 'Z') || 
-                (name[i] >= '0' && name[i] <= '9'))) {
+        if (!((name[i] >= 'a' && name[i] <= 'z') ||
+              (name[i] >= 'A' && name[i] <= 'Z') ||
+              (name[i] >= '0' && name[i] <= '9'))) {
             name[i] = '_';
         }
     }
@@ -235,60 +230,57 @@ static char *fileNameToSymbol(const char *fileName)
     if (name[0] >= '0' && name[0] <= '9') {
         name[0] = '_';
     }
-    
+
     return name;
 }
 
 static void addTableItem(const char *fileName, const char *symbolName, unsigned long int size)
 {
-	tableCount++;
-	char buf[256] = {0};
-	int nBytes;
-	
-	if(tableCount == 1)
-	{
-		nBytes = sprintf(buf, indexItemFirst, fileName, symbolName, size);
-	} else {
-		nBytes = sprintf(buf, indexItemNext, fileName, symbolName, size);
-	}
-	
-	if(!tableStr)
-	{
-		tableStrSize = nBytes + 1;
-		tableStr = (char*)malloc(tableStrSize);
-		check(tableStr != 0, cantMalloc, "file table ");
-		strncpy(tableStr, buf, nBytes + 1);
-	} else {
-		int prevTableStrSize = tableStrSize;
-		tableStrSize += nBytes;
-		tableStr = (char*)realloc(tableStr, tableStrSize);
-		check(tableStr != 0, cantMalloc, " file table ");
-		strncpy(&tableStr[prevTableStrSize-1], buf, nBytes + 1);	
-	}
+    tableCount++;
+    char buf[256] = {0};
+    int nBytes;
+
+    if (tableCount == 1) {
+        nBytes = sprintf(buf, indexItemFirst, fileName, symbolName, size);
+    } else {
+        nBytes = sprintf(buf, indexItemNext, fileName, symbolName, size);
+    }
+
+    if (!tableStr) {
+        tableStrSize = nBytes + 1;
+        tableStr = (char *)malloc(tableStrSize);
+        check(tableStr != 0, cantMalloc, "file table ");
+        strncpy(tableStr, buf, nBytes + 1);
+    } else {
+        int prevTableStrSize = tableStrSize;
+        tableStrSize += nBytes;
+        tableStr = (char *)realloc(tableStr, tableStrSize);
+        check(tableStr != 0, cantMalloc, " file table ");
+        strncpy(&tableStr[prevTableStrSize - 1], buf, nBytes + 1);
+    }
 }
 
 static void finishAndWriteTable(void)
 {
-	if(headerFile) {
-		header(tableHead);
-	} else {
-		output(tableHead);
-	}
-	
-	output(tableStart);
-	output(tableStr);
-	output(tableEnd, tableCount);
-}
+    if (headerFile) {
+        header(tableHead);
+    } else {
+        output(tableHead);
+    }
 
+    output(tableStart);
+    output(tableStr);
+    output(tableEnd, tableCount);
+}
 
 /* Process an input file */
 static void processFile(const char *fileName, long int from, long int to)
 {
-    bool symbolNameAllocated = false;   /* Did we allocate the symbolName? */
-    long int i, j;                      /* Indexes for various purposes */
-    FILE *inputFile;                    /* Input file stream */
-    int byte;                           /* Byte read from the input */
-    
+    bool symbolNameAllocated = false; /* Did we allocate the symbolName? */
+    long int i, j;                    /* Indexes for various purposes */
+    FILE *inputFile;                  /* Input file stream */
+    int byte;                         /* Byte read from the input */
+
     /* Be sure that the output file is open */
     check(outputFile != 0, noOutputFilesAreNamed);
 
@@ -315,7 +307,7 @@ static void processFile(const char *fileName, long int from, long int to)
         check(to >= 0, cantDetermine, fileName);
         --to;
     }
-    
+
     assert(from <= to - 1);
 
     /* Position the file to "from" */
@@ -342,12 +334,11 @@ static void processFile(const char *fileName, long int from, long int to)
     if (headerFile) {
         header(externOutputDefinition, typeName, symbolName, to - from + 1);
     }
-	
-	if(createTable) {
-		/* store file information for table later on */
-		addTableItem(fileName, symbolName, to - from + 1);
-	}
-	
+
+    if (createTable) {
+        /* store file information for table later on */
+        addTableItem(fileName, symbolName, to - from + 1);
+    }
 
     /* Output the contents */
     j = 1;
@@ -355,7 +346,7 @@ static void processFile(const char *fileName, long int from, long int to)
         /* Read a byte from the input file */
         byte = fgetc(inputFile);
         check(byte != EOF, cantRead, fileName);
-        
+
         /* Output the indentation if it's the first byte of a line */
         if (j == 1) {
             output(indentString);
@@ -409,22 +400,21 @@ static void openOutputFile(const char *fileName)
         fputs(tryHelp, stderr);
         panic();
     }
-    
+
     /* Close previous output file if any */
     if (outputFile) {
         check(!fclose(outputFile), cantClose, outputFileName);
     }
-    
+
     /* Open the new output file */
     outputFile = fopen(fileName, "w");
     check(outputFile != 0, cantOpen, outputFileName);
     outputFileName = fileName;
 
     output("/* Generated by bin2c, do not edit manually */\n");
-	if((headerFile !=0) && createTable)
-	{
-		output("\n#include \"%s\"\n", headerFileName);
-	} 
+    if ((headerFile != 0) && createTable) {
+        output("\n#include \"%s\"\n", headerFileName);
+    }
 }
 
 /* Open a header file */
@@ -436,7 +426,7 @@ static void openHeaderFile(const char *fileName)
         fputs(tryHelp, stderr);
         panic();
     }
-    
+
     /* Close previous header file if any */
     if (headerFile) {
         header("\n#endif    /* __%s_included */\n", headerSymbol);
@@ -444,13 +434,13 @@ static void openHeaderFile(const char *fileName)
         headerSymbol = 0;
         check(!fclose(headerFile), cantClose, headerFileName);
     }
-    
+
     /* Open the new header file */
     headerFile = fopen(fileName, "w");
     check(headerFile != 0, cantOpen, headerFileName);
     headerFileName = fileName;
     headerSymbol = fileNameToSymbol(fileName);
-    
+
     header("/* Generated by bin2c, do not edit manually */\n");
     header("#ifndef __%s_included\n", headerSymbol);
     header("#define __%s_included\n", headerSymbol);
@@ -460,7 +450,7 @@ static void openHeaderFile(const char *fileName)
 static void setSymbolName(char *name)
 {
     int i;
-    
+
     if (symbolName) {
         printfError(symbolNameGiven);
         fputs(tryHelp, stderr);
@@ -473,35 +463,37 @@ static void setSymbolName(char *name)
         fputs(tryHelp, stderr);
         panic();
     }
-    
+
     /* Check if the symbol is a valid C identifier */
-    check((name[0] >= 'a' && name[0] <='z') ||
-            (name[0] >= 'A' && name[0] <='Z') ||
-            (name[0] == '_'), notValidId, name);
-    
+    check((name[0] >= 'a' && name[0] <= 'z') ||
+              (name[0] >= 'A' && name[0] <= 'Z') ||
+              (name[0] == '_'),
+          notValidId, name);
+
     for (i = 1; name[i]; ++i) {
-        check((name[i] >= 'a' && name[i] <='z') ||
-                (name[i] >= 'A' && name[i] <='Z') ||
-                (name[i] >= '0' && name[i] <='9') ||
-                (name[i] == '_'), notValidId, name);
+        check((name[i] >= 'a' && name[i] <= 'z') ||
+                  (name[i] >= 'A' && name[i] <= 'Z') ||
+                  (name[i] >= '0' && name[i] <= '9') ||
+                  (name[i] == '_'),
+              notValidId, name);
     }
-    
+
     /* Set the symbol name */
-    symbolName = name;    
- }
+    symbolName = name;
+}
 
 /* Main function */
 int main(int argc, char **argv)
 {
-    int i;              /* Index to process commandline arguments */
-    
+    int i; /* Index to process commandline arguments */
+
     /* Print help if no command line arguments are given */
     if (argc <= 1) {
         /* Print command line arguments help and exit immediately */
         printf("%s", commandLineHelp);
         return EXIT_SUCCESS;
     }
-    
+
     /* Scan for a -h or --help option */
     for (i = 1; i < argc; ++i) {
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -521,74 +513,74 @@ int main(int argc, char **argv)
     }
 
     /* Process command line arguments */
-    for (i =  1; i < argc; ++i) {
+    for (i = 1; i < argc; ++i) {
         /* Check if it's an option or file name */
         if (argv[i][0] == '-') {
             /* Process the option */
             switch (argv[i][1]) {
-                case '-':
-                    /* Long options */
-                    if (!strcmp(argv[i], "--output")) {
-                        /* Name an output file */
-                        openOutputFile(argv[i+1]);
-                        ++i;
-                    } else if (!strcmp(argv[i], "--header")) {
-                        /* Name a header file */
-                        openHeaderFile(argv[i+1]);
-                        ++i;
-                    } else if (!strcmp(argv[i], "--macro")) {
-                        /* Create a macro for the size definition */
-                        createMacro = true;
-                   } else if (!strcmp(argv[i], "--table")) {
-                        /* Create table */
-                        createTable = true;
-                    } else if (!strcmp(argv[i], "--name")) {
-                        /* Name the symbol */
-                        setSymbolName(argv[i+1]);
-                        ++i;
-                    } else {
-                        /* Unknown option */
-                        handleUnknownOption(argv[i]);
-                    }
-                    break;
-                case 'o':
+            case '-':
+                /* Long options */
+                if (!strcmp(argv[i], "--output")) {
                     /* Name an output file */
-                    openOutputFile(argv[i+1]);
+                    openOutputFile(argv[i + 1]);
                     ++i;
-                    break;
-                case 'd':
+                } else if (!strcmp(argv[i], "--header")) {
                     /* Name a header file */
-                    openHeaderFile(argv[i+1]);
+                    openHeaderFile(argv[i + 1]);
                     ++i;
-                    break;
-                case 'm':
+                } else if (!strcmp(argv[i], "--macro")) {
                     /* Create a macro for the size definition */
                     createMacro = true;
-                    break;
-                case 'n':
-                    /* Name the symbol */
-                    setSymbolName(argv[i+1]);
-                    ++i;
-                    break;
-                case 't':
+                } else if (!strcmp(argv[i], "--table")) {
                     /* Create table */
                     createTable = true;
-                    break;
-                default:
+                } else if (!strcmp(argv[i], "--name")) {
+                    /* Name the symbol */
+                    setSymbolName(argv[i + 1]);
+                    ++i;
+                } else {
                     /* Unknown option */
                     handleUnknownOption(argv[i]);
+                }
+                break;
+            case 'o':
+                /* Name an output file */
+                openOutputFile(argv[i + 1]);
+                ++i;
+                break;
+            case 'd':
+                /* Name a header file */
+                openHeaderFile(argv[i + 1]);
+                ++i;
+                break;
+            case 'm':
+                /* Create a macro for the size definition */
+                createMacro = true;
+                break;
+            case 'n':
+                /* Name the symbol */
+                setSymbolName(argv[i + 1]);
+                ++i;
+                break;
+            case 't':
+                /* Create table */
+                createTable = true;
+                break;
+            default:
+                /* Unknown option */
+                handleUnknownOption(argv[i]);
             }
         } else {
             /* Process the file */
             processFile(argv[i], 0, -1);
         }
     }
-	
-	/* add a file information table to the header */
-	if(createTable) {
-		finishAndWriteTable();
-		free(tableStr);
-	}
+
+    /* add a file information table to the header */
+    if (createTable) {
+        finishAndWriteTable();
+        free(tableStr);
+    }
 
     /* Close any remaining output files */
     if (headerFile) {
