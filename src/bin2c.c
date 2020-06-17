@@ -7,7 +7,7 @@
 
 /* Version information */
 const char *versionInfo =
-    "bin2c version 1.1\n"
+    "bin2c version 1.2\n"
     "\n"
     "This program is public domain, do whatever you want with it.\n";
 
