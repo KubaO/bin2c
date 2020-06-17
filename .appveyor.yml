@@ -1,0 +1,47 @@
+image:
+  - Visual Studio 2019
+
+version: 1.2_{build}
+
+environment:
+  VERBOSE: true
+
+install:
+  - ps: |
+      # We write out a script that pulls in Visual Studio variables
+      echo @'
+      echo '- Setting environment variables for Visual Studio'
+      cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsamd64_x86.bat`" && set > %temp%\vcvars.txt"
+      Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
+        if ($_ -match "^(.*?)=(.*)$") {
+          Set-Content "env:\$($matches[1])" $matches[2]
+        }
+      }
+      '@>> vcvars.ps1
+
+build_script:
+  - ps: |
+      .\vcvars.ps1
+      mkdir build | Out-Null
+      pushd build
+      cmake -G Ninja -DCMAKE_VERBOSE_MAKEFILE=YES -DCMAKE_BUILD_TYPE=Release ..
+      cmake --build .
+      if (! $?) { throw "CMake failed with exit code $LastExitCode" }
+      popd
+      dir build\bin2c.exe
+
+artifacts:
+  path: build\*.exe
+  name: executable
+
+deploy:
+  - provider: GitHub
+    description: 'A new release :)'
+    auth_token:
+      secure: aGIr6oDY/gAFYEycKZ9GmY1RJSGKBEJPfxa4kfgTqWLs7WzEScgCtnu319TkZp3h
+    artifact: build\bin2c.exe
+    draft: false
+    prerelease: false
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: false       # deploy on tag push only?
