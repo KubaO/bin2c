@@ -9,7 +9,6 @@
 const char *versionInfo =
     "bin2c version 1.1\n"
     "\n"
-    "Visit sourceforge.net/projects/bin2c to for new versions.\n"
     "This program is public domain, do whatever you want with it.\n";
 
 /* Command line help */
@@ -40,7 +39,6 @@ const char *commandLineHelp =
     "                            file names\n"
     "  -v, --version             Print version information and exit immediately\n"
     "\n"
-    "Visit sourceforge.net/projects/bin2c to for new versions.\n"
     "This program is public domain, do whatever you want with it.\n";
 
 const char *tableHead =
