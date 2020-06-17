@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(bin2c LANGUAGES C)
 
 add_executable(bin2c src/bin2c.c)
+set_property(TARGET bin2c PROPERTY INTERPROCEDURAL_OPTIMIZATION)
 
 if (MSVC)
     target_compile_options(bin2c PRIVATE /W4)
